@@ -35,14 +35,35 @@ docker run --detach --name vespa --hostname vespa-tutorial \
 ```bash
 (cd scripts/vespa_local && zip -r - * | curl --header "Content-Type:application/zip" --data-binary @- http://localhost:19071/application/v2/tenant/default/prepareandactivate)
 ```
-
 You can verify that Vespa has been set up correctly by visiting `http://localhost:8080` in your browser.
+
+5. We need to install Java Development Kit and Maven to build the jar file for the custom searchers.
+
+5a. Install Java Development Kit: 
+You can install the Java Development Kit (JDK) by following the instructions [here](https://docs.oracle.com/en/java/javase/22/install/overview-jdk-installation.html). 
+Post installation, remember to set JAVA_HOME Environment Variable and to add Java to the PATH Environment Variable.
+You can verify the installation by running the following command:
+```bash
+java -version
+```
+5b. Install Maven (https://maven.apache.org/install.html)
+You can install Maven by following the instructions [here](https://maven.apache.org/install.html).
+Similar to setting Java, you need to add Maven to the PATH Environment Variable.
+Verify Maven installation by running the following command: 
+```bash
+mvn -version
+```
+Post this you need to create a jar file, cd into the vespa directory in your local marqo repository, and run 
+```bash
+mvn clean package
+```
+Post running this command, you will see that a target folder gets created in the vespa directory, which contains a jar file called marqo-custom-searchers-deploy.jar. This jar file is used to deploy the custom searchers to Vespa.
 
 ### Option A. Run the Marqo application locally (outside of docker) through IDE
 Now you can run Marqo locally through your IDE (e.g. PyCharm) by following the steps below.
 
-5. Open the Marqo project in your IDE (e.g. PyCharm) and go to the file `src/marqo/tensor_search/api.py`
-6. Set up your [debug configuration](https://www.jetbrains.com/help/pycharm/creating-run-debug-configuration-for-tests.html)
+6. Open the Marqo project in your IDE (e.g. PyCharm) and go to the file `src/marqo/tensor_search/api.py`
+7. Set up your [debug configuration](https://www.jetbrains.com/help/pycharm/creating-run-debug-configuration-for-tests.html)
 to run `api.py` with the following environment variables:
 ```
 MARQO_ENABLE_BATCH_APIS=true
@@ -52,14 +73,14 @@ VESPA_CONFIG_URL=http://localhost:19071
 VESPA_DOCUMENT_URL=http://localhost:8080
 VESPA_QUERY_URL=http://localhost:8080
 ```
-7. Now you can Debug this file directly from your IDE (e.g. PyCharm) to start Marqo locally.
-8. Set breakpoints in the project for better debugging experience.
+8. Now you can Debug this file directly from your IDE (e.g. PyCharm) to start Marqo locally.
+9. Set breakpoints in the project for better debugging experience.
 
 
 ### Option B. Run the Marqo application locally (outside of docker) through `uvicorn`
 Finish the preparations above, then run the following command:
 
-5. Set up the environment variables and run Marqo through `uvicorn`
+6. Set up the environment variables and run Marqo through `uvicorn`
 ```bash
 export MARQO_ENABLE_BATCH_APIS=true
 export MARQO_LOG_LEVEL=debug
