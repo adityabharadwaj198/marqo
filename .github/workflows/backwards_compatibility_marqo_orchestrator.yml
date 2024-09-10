@@ -1,0 +1,61 @@
+# Orchestrator workflow
+name: Marqo Test Orchestrator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      to_version:
+        description: 'Target Marqo version'
+        required: true
+      to_image:
+        description: 'Target Marqo image (optional)'
+        required: false
+      max_versions_to_test:
+        description: 'Max versions to test'
+        required: false
+
+# Setting MAX_VERSIONS_TO_TEST, this can be a configurable value or if no input is provided, it can be a default value.
+env:
+  MAX_VERSIONS_TO_TEST: ${{ github.event.inputs.max_versions_to_test || 3 }
+
+jobs:
+  Orchestrate-Marqo:
+    name: Orchestrate backwards compatibility test execution
+    runs-on: ubuntu-latest
+
+    environment: marqo-test-suite
+    steps:
+      - name: Checkout marqo repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+          cache: "pip"
+
+      - name: Generate version list #this code block just generates the from versions and stores it in a versions variable as a list
+        id: versions
+        run: |
+          to_version="${{ github.event.inputs.to_version }}"
+          versions=$(python -c "
+          import semver
+          v = semver.VersionInfo.parse('$to_version')
+          print(' '.join(str(v.bump_patch(-i)) for i in range($MAX_VERSIONS_TO_TEST)))
+          ")
+          echo "::set-output name=list::$versions"
+
+      - name: Trigger execution workflows #this code block is then actually responsible for running the the execution yaml file with from_version / to_version combinations
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} #check if this is required
+        run: |
+          for from_version in ${{ steps.versions.outputs.list }}
+          do
+            gh workflow run backwards_compatibility_marqo_execution.yml -f from_version=$from_version -f to_version=${{ github.event.inputs.to_version }} -f to_image=${{ github.event.inputs.to_image }}
+          done

@@ -1,0 +1,116 @@
+
+# Execution workflow
+name: Marqo Test Execution
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      from_version:
+        description: 'Source Marqo version'
+        required: true
+      to_version:
+        description: 'Target Marqo version'
+        required: true
+      from_image:
+        description: 'Source Marqo image (optional)'
+        required: false
+      to_image:
+        description: 'Target Marqo image (optional)'
+        required: false
+
+jobs:
+  Start-Runner:
+    name: Start self-hosted EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ${{ secrets.AMD_EC2_IMAGE_ID }}
+          ec2-instance-type: t3.xlarge
+          subnet-id: ${{ secrets.AMD_SUBNET_ID }}
+          security-group-id: ${{ secrets.AMD_SECURITY_GROUP_ID }}
+
+  backwards_compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout marqo repo
+        uses: actions/checkout@v3
+        with:
+          repository: marqo-ai/marqo
+          fetch-depth: 0
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          #pip install -r requirements.txt
+          pip install tox==3.26
+          pip install flake8
+
+      - name: Checkout marqo-api-tests repo
+        uses: actions/checkout@v3
+        with:
+          repository: marqo-ai/marqo-api-tests
+          ref: ${{ github.event.inputs.api_tests_branch }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set up Environment
+        run: |
+          # Set up conf file
+          echo 'export MARQO_API_TESTS_ROOT="${{ github.workspace }}"' >> conf
+
+      - name: Run backwards compatibility test #run_container is defined in marqo-api-tests
+        run: |
+          python tests/backwards_compatibility_tests/test_runner.py \ 
+            --mode=backwards_compatibility \
+            --from_version ${{ github.event.inputs.from_version }} \
+            --to_version ${{ github.event.inputs.to_version }} \
+            --from_image ${{ github.event.inputs.from_image }} \
+            --to_image ${{ github.event.inputs.to_image }}
+
+  rollback: #yet to write this
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest docker
+
+      - name: Run rollback test
+        run: |
+          python tests/backwards_compatibility_tests/test_runner.py \
+            --mode=rollback \
+            --from_version ${{ github.event.inputs.from_version }} \
+            --to_version ${{ github.event.inputs.to_version }} \
+            --from_image ${{ github.event.inputs.from_image }} \
+            --to_image ${{ github.event.inputs.to_image }}
