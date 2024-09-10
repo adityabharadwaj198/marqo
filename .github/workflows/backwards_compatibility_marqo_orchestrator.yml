@@ -20,10 +20,10 @@ on:
 
 # Setting MAX_VERSIONS_TO_TEST, this can be a configurable value or if no input is provided, it can be a default value.
 env:
-  MAX_VERSIONS_TO_TEST: ${{ github.event.inputs.max_versions_to_test || 3 }
+  MAX_VERSIONS_TO_TEST: ${{ github.event.inputs.max_versions_to_test || 3 }}
 
 jobs:
-  Orchestrate-Marqo:
+  orchestrate:
     name: Orchestrate backwards compatibility test execution
     runs-on: ubuntu-latest
 
@@ -40,14 +40,29 @@ jobs:
           python-version: '3.8'
           cache: "pip"
 
+      - name: Install semver
+        run: |
+          pip install semver
+
       - name: Generate version list #this code block just generates the from versions and stores it in a versions variable as a list
         id: versions
         run: |
-          to_version="${{ github.event.inputs.to_version }}"
+          to_version="${{ github.event.inputs.to_version}}"
+          MAX_PATCH=9  # Assuming patch versions go up to x.13.9 or similar
           versions=$(python -c "
           import semver
           v = semver.VersionInfo.parse('$to_version')
-          print(' '.join(str(v.bump_patch(-i)) for i in range($MAX_VERSIONS_TO_TEST)))
+          versions = []
+          current_minor = v.minor - 1  # Decrease to previous minor version
+          patch = $MAX_PATCH
+          
+          for i in range($MAX_VERSIONS_TO_TEST):
+              version_str = f'{v.major}.{current_minor}.{patch}'
+              versions.append(version_str)
+              patch -= 1
+              if patch < 0:  # Move to the next minor version if we run out of patches
+                  break
+          print(' '.join(versions))
           ")
           echo "::set-output name=list::$versions"
 
@@ -57,5 +72,19 @@ jobs:
         run: |
           for from_version in ${{ steps.versions.outputs.list }}
           do
-            gh workflow run backwards_compatibility_marqo_execution.yml -f from_version=$from_version -f to_version=${{ github.event.inputs.to_version }} -f to_image=${{ github.event.inputs.to_image }}
+            workflow_data="{\"ref\":\"${{ github.ref }}\",\"inputs\":{\"from_version\":\"$from_version\",\"to_version\":\"${{ github.event.inputs.to_version }}\""
+            
+            if [ -n "${{ github.event.inputs.to_image }}" ]; then
+              workflow_data="$workflow_data,\"to_image\":\"${{ github.event.inputs.to_image }}\""
+            fi
+            workflow_data="$workflow_data}}"
+            
+            curl -L \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              https://api.github.com/repos/marqo-ai/marqo/actions/workflows/backwards_compatibility_marqo_execution.yml/dispatches \
+              -d "$workflow_data"
           done
+        # try going to https://api.github.com/repos/marqo-ai/marqo, and you'll see all thing available

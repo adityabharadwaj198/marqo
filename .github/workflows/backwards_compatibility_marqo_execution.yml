@@ -1,12 +1,7 @@
-
 # Execution workflow
 name: Marqo Test Execution
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       from_version:
