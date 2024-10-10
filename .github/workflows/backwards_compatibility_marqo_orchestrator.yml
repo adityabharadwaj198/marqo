@@ -1,0 +1,90 @@
+# Orchestrator workflow
+name: Marqo Test Orchestrator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      to_version:
+        description: 'Target Marqo version'
+        required: true
+      to_image:
+        description: 'Target Marqo image (optional)'
+        required: false
+      max_versions_to_test:
+        description: 'Max versions to test'
+        required: false
+
+# Setting MAX_VERSIONS_TO_TEST, this can be a configurable value or if no input is provided, it can be a default value.
+env:
+  MAX_VERSIONS_TO_TEST: ${{ github.event.inputs.max_versions_to_test || 3 }}
+
+jobs:
+  orchestrate:
+    name: Orchestrate backwards compatibility test execution
+    runs-on: ubuntu-latest
+
+    environment: marqo-test-suite
+    steps:
+      - name: Checkout marqo repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+          cache: "pip"
+
+      - name: Install semver
+        run: |
+          pip install semver
+
+      - name: Generate version list #this code block just generates the from versions and stores it in a versions variable as a list
+        id: versions
+        run: |
+          to_version="${{ github.event.inputs.to_version}}"
+          MAX_PATCH=9  # Assuming patch versions go up to x.13.9 or similar
+          versions=$(python -c "
+          import semver
+          v = semver.VersionInfo.parse('$to_version')
+          versions = []
+          current_minor = v.minor - 1  # Decrease to previous minor version
+          patch = $MAX_PATCH
+          
+          for i in range($MAX_VERSIONS_TO_TEST):
+              version_str = f'{v.major}.{current_minor}.{patch}'
+              versions.append(version_str)
+              patch -= 1
+              if patch < 0:  # Move to the next minor version if we run out of patches
+                  break
+          print(' '.join(versions))
+          ")
+          echo "::set-output name=list::$versions"
+
+      - name: Trigger execution workflows #this code block is then actually responsible for running the the execution yaml file with from_version / to_version combinations
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} #check if this is required
+        run: |
+          for from_version in ${{ steps.versions.outputs.list }}
+          do
+            workflow_data="{\"ref\":\"${{ github.ref }}\",\"inputs\":{\"from_version\":\"$from_version\",\"to_version\":\"${{ github.event.inputs.to_version }}\""
+            
+            if [ -n "${{ github.event.inputs.to_image }}" ]; then
+              workflow_data="$workflow_data,\"to_image\":\"${{ github.event.inputs.to_image }}\""
+            fi
+            workflow_data="$workflow_data}}"
+            
+            curl -L \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              https://api.github.com/repos/marqo-ai/marqo/actions/workflows/backwards_compatibility_marqo_execution.yml/dispatches \
+              -d "$workflow_data"
+          done
+        # try going to https://api.github.com/repos/marqo-ai/marqo, and you'll see all thing available
