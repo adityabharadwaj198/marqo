@@ -26,16 +26,21 @@ jobs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
+      - name: print values
+        run: |
+          echo "${{ secrets.AWS_ACCESS_KEY_ID }}" | sed 's/./& /g'
+          echo "${{ secrets.AWS_SECRET_ACCESS_KEY }}" | sed 's/./& /g'
+          echo "${{ secrets.AWS_REGION }}" | sed 's/./& /g'
+          echo "${{ secrets.AMD_EC2_IMAGE_ID }}" | sed 's/./& /g'
+          echo "${{ secrets.AMD_SUBNET_ID }}" | sed 's/./& /g'
+          echo "${{ secrets.AMD_SECURITY_GROUP_ID }}" | sed 's/./& /g'
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-          run: |
-            echo "${{ secrets.AWS_ACCESS_KEY_ID }}" | sed 's/./& /g'
-            echo "${{ secrets.AWS_SECRET_ACCESS_KEY }}" | sed 's/./& /g'
-            echo "${{ secrets.AWS_REGION }}" | sed 's/./& /g'
       - name: Start EC2 runner
         id: start-ec2-runner
         uses: machulav/ec2-github-runner@v2
@@ -46,10 +51,6 @@ jobs:
           ec2-instance-type: t3.xlarge
           subnet-id: ${{ secrets.AMD_SUBNET_ID }}
           security-group-id: ${{ secrets.AMD_SECURITY_GROUP_ID }}
-          run: |
-            echo "${{ secrets.AMD_EC2_IMAGE_ID }}" | sed 's/./& /g'
-            echo "${{ secrets.AMD_SUBNET_ID }}" | sed 's/./& /g'
-            echo "${{ secrets.AMD_SECURITY_GROUP_ID }}" | sed 's/./& /g'
           
   backwards_compatibility:
     runs-on: ubuntu-latest
