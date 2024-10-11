@@ -46,7 +46,7 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ${{ secrets.MARQO_CPU_ARM64_TESTS_INSTANCE_AMI }}
+          ec2-image-id: ${{ secrets.MARQO_CPU_AMD64_TESTS_INSTANCE_AMI }}
           ec2-instance-type: m6i.xlarge
           subnet-id: ${{ secrets.MARQO_WORKFLOW_TESTS_SUBNET_ID }}
           security-group-id: ${{ secrets.MARQO_WORKFLOW_TESTS_SECURITY_GROUP_ID }}
