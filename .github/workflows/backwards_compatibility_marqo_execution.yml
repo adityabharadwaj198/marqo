@@ -115,6 +115,8 @@ jobs:
 #marqo_from_version = {env:MARQO_FROM_VERSION:}
       #marqo_to_version = {env:MARQO_TO_VERSION:}
       #marqo_to_version_image_tag = {env:MARQO_TO_VERSION_IMAGE_TAG:}
+      - name: list contents of directory
+        run: ls -la
       - name: Run backwards compatibility test #run_container is defined in marqo-api-tests
         run: |
           export MARQO_FROM_VERSION="${{github.event.inputs.from_version}}"
