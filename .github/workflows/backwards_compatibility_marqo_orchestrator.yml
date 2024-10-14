@@ -97,7 +97,7 @@ jobs:
               workflow_data="$workflow_data,\"to_image\":\"${{ github.event.inputs.to_image }}\""
             fi
             workflow_data="$workflow_data}}"
-            
+            echo "printing workflow_data + " $workflow_data
             curl -L \
               -X POST \
               -H "Accept: application/vnd.github+json" \
