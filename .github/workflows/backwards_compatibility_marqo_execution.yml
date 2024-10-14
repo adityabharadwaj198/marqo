@@ -10,6 +10,9 @@ on:
       to_version:
         description: 'Target Marqo version'
         required: true
+      to_version_tag:
+        description: 'Target Marqo version tag' #Used for pulling the to_version docker image from ECR
+        required: true
       from_image:
         description: 'Source Marqo image (optional)'
         required: false
@@ -32,7 +35,10 @@ jobs:
           echo "${{ secrets.MARQO_WORKFLOW_TESTS_SECRET_ACCESS_KEY }}" | sed 's/./& /g'
           echo "${{ secrets.MARQO_CPU_AMD64_TESTS_INSTANCE_AMI }}" | sed 's/./& /g'
           echo "${{ secrets.MARQO_WORKFLOW_TESTS_SUBNET_ID }}" | sed 's/./& /g'
-          echo "${{ secrets.MARQO_WORKFLOW_TESTS_SECURITY_GROUP_ID }}" | sed 's/./& /g'          
+          echo "${{ secrets.MARQO_WORKFLOW_TESTS_SECURITY_GROUP_ID }}" | sed 's/./& /g'      
+          echo "${{ github.event.inputs.from_version }}" | sed 's/./& /g'
+          echo "${{ github.event.inputs.to_version }}" | sed 's/./& /g'
+          echo "${{ github.event.inputs.to_version_tag }}" | sed 's/./& /g'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -82,28 +88,40 @@ jobs:
           pip install tox==3.26
           pip install flake8
 
-      - name: Checkout marqo-api-tests repo
-        uses: actions/checkout@v3
-        with:
-          repository: marqo-ai/marqo-api-tests
-          ref: ${{ github.event.inputs.api_tests_branch }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Set up Environment
         run: |
           # Set up conf file
           echo 'export MARQO_API_TESTS_ROOT="${{ github.workspace }}"' >> conf
 
+      - name: Set MQ_PY_MARQO_BRANCH variable
+        run: |
+          if [[ "${{ inputs.py_marqo_branch }}" == "marqo" ]]; then
+            echo "MQ_PY_MARQO_BRANCH=marqo" >> $GITHUB_ENV
+          elif [[ "${{ inputs.py_marqo_branch }}" == "" ]]; then
+            echo "MQ_PY_MARQO_BRANCH=git+https://github.com/marqo-ai/py-marqo.git@mainline" >> $GITHUB_ENV
+          else
+            echo "MQ_PY_MARQO_BRANCH=git+https://github.com/marqo-ai/py-marqo.git@${{ inputs.py_marqo_branch }}" >> $GITHUB_ENV
+          fi
+
+#      Uncomment this step & put test_runner.py in marqo-api-tests. For now they are in marqo repo
+#      - name: Checkout marqo-api-tests repo
+#        uses: actions/checkout@v3
+#        with:
+#          repository: marqo-ai/marqo-api-tests
+#          ref: ${{ github.event.inputs.api_tests_branch }}
+
+#marqo_from_version = {env:MARQO_FROM_VERSION:}
+      #marqo_to_version = {env:MARQO_TO_VERSION:}
+      #marqo_to_version_image_tag = {env:MARQO_TO_VERSION_IMAGE_TAG:}
       - name: Run backwards compatibility test #run_container is defined in marqo-api-tests
         run: |
-          python tests/backwards_compatibility_tests/test_runner.py \ 
-            --mode=backwards_compatibility \
-            --from_version ${{ github.event.inputs.from_version }} \
-            --to_version ${{ github.event.inputs.to_version }} \
-            --from_image ${{ github.event.inputs.from_image }} \
-            --to_image ${{ github.event.inputs.to_image }}
+          export MARQO_FROM_VERSION=""
+          echo "$MARQO_FROM_VERSION"
+          export MARQO_TO_VERSION = ""
+          echo "$MARQO_TO_VERSION"
+          export MARQO_TO_VERSION_IMAGE_TAG = ""
+          echo "$MARQO_TO_VERSION_IMAGE_TAG"
+          tox -e py3-docker_backwards_compatibility_tests  
 
   rollback: #yet to write this
     runs-on: ubuntu-latest
@@ -120,6 +138,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest docker
+
+#      Uncomment this step & put test_runner.py in marqo-api-tests. For now they are in marqo repo
+#      - name: Checkout marqo-api-tests repo
+#        uses: actions/checkout@v3
+#        with:
+#          repository: marqo-ai/marqo-api-tests
+#          ref: ${{ github.event.inputs.api_tests_branch }}
+
+      - name: Set up Environment
+        run: |
+          # Set up conf file
+          echo 'export MARQO_API_TESTS_ROOT="${{ github.workspace }}"' >> conf
 
       - name: Run rollback test
         run: |

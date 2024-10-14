@@ -4,8 +4,8 @@ name: Marqo Test Orchestrator
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
   workflow_dispatch:
     inputs:
       to_version:
@@ -66,13 +66,32 @@ jobs:
           ")
           echo "::set-output name=list::$versions"
 
+      - name: Build and push marqo image to ECR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          to_version: ${{ github.event.inputs.to_version }}
+        run: |
+          # Build and push image to ECR
+          echo "Building and pushing marqo image to ECR"
+          echo "printing the branch name" + ${{ github.ref_name }}
+          echo "printing the commit sha" + ${{ github.sha }}
+          workflow_data="{\"ref\": \"mainline\",\"inputs\": {\"marqo_ref\": \"${{ github.sha }}\", \"push_to\": \"ECR\",\"image_repo\": \"marqo\",\"image_tag\":\"${{ github.sha }}\"}}"
+          echo "printing the workflow_data" + $workflow_data
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/marqo-ai/open_source_CI/actions/workflows/build_push_img.yml/dispatches \
+            -d "$workflow_data"
+
       - name: Trigger execution workflows #this code block is then actually responsible for running the the execution yaml file with from_version / to_version combinations
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} #check if this is required
         run: |
           for from_version in ${{ steps.versions.outputs.list }}
           do
-            workflow_data="{\"ref\":\"${{ github.ref }}\",\"inputs\":{\"from_version\":\"$from_version\",\"to_version\":\"${{ github.event.inputs.to_version }}\""
+            workflow_data="{\"ref\":\"${{ github.ref }}\",\"inputs\":{\"from_version\":\"$from_version\",\"to_version\":\"${{ github.event.inputs.to_version }}\",\"to_version_tag\":\"${{ github.sha }}\""
             
             if [ -n "${{ github.event.inputs.to_image }}" ]; then
               workflow_data="$workflow_data,\"to_image\":\"${{ github.event.inputs.to_image }}\""
@@ -84,7 +103,8 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              https://api.github.com/repos/adityabharadwaj198/marqo/actions/workflows/backwards_compatibility_marqo_execution.yml/dispatches \
+              https://api.github.com/repos/adityabharadwaj198/marqo/actions/workflows/backwards_compatibility_marqo_execution.yml/dispatches \ 
               -d "$workflow_data"
           done
+        # will need to change ^ to the actual marqo repo instead of adityabharadwaj198/marqo
         # try going to https://api.github.com/repos/marqo-ai/marqo, and you'll see all thing available
