@@ -115,11 +115,11 @@ jobs:
       #marqo_to_version_image_tag = {env:MARQO_TO_VERSION_IMAGE_TAG:}
       - name: Run backwards compatibility test #run_container is defined in marqo-api-tests
         run: |
-          export MARQO_FROM_VERSION=""
+          export MARQO_FROM_VERSION="{{github.event.inputs.from_version}}"
           echo "$MARQO_FROM_VERSION"
-          export MARQO_TO_VERSION = ""
+          export MARQO_TO_VERSION="{{github.event.inputs.to_version}}"
           echo "$MARQO_TO_VERSION"
-          export MARQO_TO_VERSION_IMAGE_TAG = ""
+          export MARQO_TO_VERSION_IMAGE_TAG="{{github.event.inputs.to_version_tag}}"
           echo "$MARQO_TO_VERSION_IMAGE_TAG"
           tox -e py3-docker_backwards_compatibility_tests  
 
