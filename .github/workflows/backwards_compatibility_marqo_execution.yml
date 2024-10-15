@@ -105,6 +105,8 @@ jobs:
 
       - name: Check current directory
         run: pwd
+      - name: List all contents of directory
+        run: ls -la
       - name: list all tox environments
         run: tox -l 
       #      Uncomment this step & put test_runner.py in marqo-api-tests. For now they are in marqo repo
