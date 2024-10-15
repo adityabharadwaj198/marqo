@@ -73,7 +73,7 @@ jobs:
       - name: checkout marqo repo
         uses: actions/checkout@v3
         with:
-          repository: marqo-ai/marqo
+          repository: adityabharadwaj198/marqo
           fetch-depth: 0
 
       - name: Set up Python 3.8
@@ -108,25 +108,17 @@ jobs:
       - name: List all contents of directory
         run: ls -la
       - name: list all tox environments
-        run: tox -l 
-      #      Uncomment this step & put test_runner.py in marqo-api-tests. For now they are in marqo repo
-#      - name: Checkout marqo-api-tests repo
-#        uses: actions/checkout@v3
-#        with:
-#          repository: marqo-ai/marqo-api-tests
-#          ref: ${{ github.event.inputs.api_tests_branch }}
+        run: tox -l --verbose
 
-      # - name: list contents of directory
-      #   run: ls -la
-      # - name: Run backwards compatibility test #run_container is defined in marqo-api-tests
-      #   run: |
-      #     export MARQO_FROM_VERSION="${{github.event.inputs.from_version}}"
-      #     echo "$MARQO_FROM_VERSION"
-      #     export MARQO_TO_VERSION="${{github.event.inputs.to_version}}"
-      #     echo "$MARQO_TO_VERSION"
-      #     export MARQO_TO_VERSION_IMAGE_TAG="${{github.event.inputs.to_version_tag}}"
-      #     echo "$MARQO_TO_VERSION_IMAGE_TAG"
-      #     tox -e py3-docker_backwards_compatibility_tests  
+      - name: Run backwards compatibility test #run_container is defined in marqo-api-tests
+        run: |
+         export MARQO_FROM_VERSION="${{github.event.inputs.from_version}}"
+         echo "$MARQO_FROM_VERSION"
+         export MARQO_TO_VERSION="${{github.event.inputs.to_version}}"
+         echo "$MARQO_TO_VERSION"
+         export MARQO_TO_VERSION_IMAGE_TAG="${{github.event.inputs.to_version_tag}}"
+         echo "$MARQO_TO_VERSION_IMAGE_TAG"
+         tox -e py3-compatibility_tests  
 
 #  rollback: #yet to write this
 #    runs-on: ubuntu-latest
