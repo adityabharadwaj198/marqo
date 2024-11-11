@@ -121,17 +121,23 @@ jobs:
 
       # Step to run the backwards compatibility test
       - name: Run backwards_compatibility test
+        env:
+          FROM_VERSION: ${{ inputs.from_version || github.event.inputs.from_version }}
+          TO_VERSION: ${{ inputs.to_version || github.event.inputs.to_version }}
+          TO_VERSION_TAG: ${{ inputs.to_version_tag || github.event.inputs.to_version_tag }}
+          FROM_IMAGE: ${{ inputs.from_image || github.event.inputs.from_image }}
+          TO_IMAGE: ${{ inputs.to_image || github.event.inputs.to_image }}
         run: |
           cmd="python tests/backwards_compatibility_tests/compatibility_test_runner.py \
             --mode=backwards_compatibility \
-            --from_version ${{ github.event.inputs.from_version }} \
-            --to_version ${{ github.event.inputs.to_version }} \
-            --to_version_tag ${{ github.event.inputs.to_version_tag }}"
-          if [ -n "${{ github.event.inputs.from_image }}" ]; then
-            cmd="$cmd --from_image ${{ github.event.inputs.from_image }}"
+            --from_version $FROM_VERSION \
+            --to_version $TO_VERSION \
+            --to_version_tag $TO_VERSION_TAG"
+          if [ -n "$FROM_IMAGE" ]; then
+            cmd="$cmd --from_image $FROM_IMAGE"
           fi
-          if [ -n "${{ github.event.inputs.to_image }}" ]; then
-            cmd="$cmd --to_image ${{ github.event.inputs.to_image }}"
+          if [ -n "$TO_IMAGE" ]; then
+            cmd="$cmd --to_image $TO_IMAGE"
           fi
           eval $cmd
 

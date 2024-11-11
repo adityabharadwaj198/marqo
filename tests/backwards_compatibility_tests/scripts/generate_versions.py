@@ -1,3 +1,5 @@
+import json
+
 import semver
 import subprocess
 import sys
@@ -47,4 +49,4 @@ if __name__ == "__main__":
     to_version = sys.argv[1]  # Get to version from the command line
     num_versions = sys.argv[2] # Get number of versions to generate
     versions = generate_versions(to_version, int(num_versions))
-    print(" ".join(versions))  # Output versions as a comma-separated string
+    print(json.dumps(versions))  # Output versions as a comma-separated string

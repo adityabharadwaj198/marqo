@@ -70,6 +70,8 @@ jobs:
     name: Orchestrate backwards compatibility test execution
     runs-on: ubuntu-latest
     needs: build-and-push-image
+    outputs:
+      list: ${{ steps.generate-versions.outputs.list }}
 
     environment: marqo-test-suite
     steps:
@@ -95,14 +97,14 @@ jobs:
       - name: Determine to_version
         if: $${{ github.event_name != 'workflow_dispatch' && !github.event.inputs.to_version }} # If this condition is met it signifies
         # that the run was triggered due to mainline push and was not manual. In that case we need to calculate to_version below. This is skipped otherwise.
-        id: get-version
+        id: get-to-version
         run: |
           VERSION=$(python tests/backwards_compatibility_tests/scripts/determine_to_version.py ${{ github.sha }})
           echo "::set-output name=to_version::$VERSION"
 
       # Step to generate the list of versions to test
       - name: Generate version list #this code block just generates the from_version list and stores it in a versions variable as a list
-        id: versions
+        id: generate-versions
         run: |
           # Run the Python script and capture its output
           VERSION_LIST=$(python tests/backwards_compatibility_tests/scripts/generate_versions.py ${{ steps.get-version.outputs.to_version }} ${{ env.MAX_VERSIONS_TO_TEST }})
