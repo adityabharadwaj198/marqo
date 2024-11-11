@@ -101,6 +101,9 @@ jobs:
         run: |
           python -m pip install pip-tools
 
+      - name: Debug
+        run: |
+          pwd && ls -laR && echo $GITHUB_WORKSPACE
       # Step to install dependencies from requirements.txt
       - name: Install Dependencies
         run: |
