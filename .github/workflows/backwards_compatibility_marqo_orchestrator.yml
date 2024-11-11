@@ -44,8 +44,10 @@ jobs:
           echo "Checking for image existence"
           if aws ecr describe-images --repository-name marqo-compatibility-tests --image-ids imageTag=${{ github.sha }}; then
             echo "::set-output name=image_exists::true"
+            echo "Image already exists in ECR"
           else
             echo "::set-output name=image_exists::false"
+            echo "Image doesn't exist" 
           fi
 
   build-and-push-image:
