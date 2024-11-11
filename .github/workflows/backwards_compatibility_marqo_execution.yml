@@ -86,7 +86,7 @@ jobs:
       - name: checkout marqo repo
         uses: actions/checkout@v3
         with:
-          repository: marqo-ai/marqo
+          repository: ${{ github.repository }} #Check out the repository that contains this action since the tests exist in the same repository
           fetch-depth: 0
 
       # Step to set up Python 3.9
