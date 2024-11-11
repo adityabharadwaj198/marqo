@@ -31,6 +31,8 @@ jobs:
     name: Check if image already exists in ECR
     runs-on: ubuntu-latest
     environment: marqo-test-suite
+    outputs:
+      image_exists: ${{ steps.check-image.outputs.image_exists }}
     steps:
       - name: Checkout marqo repo
         uses: actions/checkout@v3
@@ -53,7 +55,7 @@ jobs:
   build-and-push-image:
     name: Build and Push Image
     needs: check-if-image-exists
-    if: ${{ steps.check-image.outputs.image_exists == 'false' }}
+    if: needs.check-if-image-exists.outputs.image_exists == 'false'
     uses: ./.github/workflows/build_push_img.yml
     with:
       marqo_ref: "${{ github.sha }}"
