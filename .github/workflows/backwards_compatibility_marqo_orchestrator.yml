@@ -44,7 +44,7 @@ jobs:
         id: check-image
         run: |
           echo "Checking for image existence"
-          if aws ecr describe-images --repository-name marqo-compatibility-tests --image-ids imageTag=${{ github.sha }}; then
+          if aws ecr describe-images --repository-name marqo-compatibility-tests --image-ids imageTag=${{ github.sha ||  }}; then
             echo "::set-output name=image_exists::true"
             echo "Image already exists in ECR"
           else
@@ -107,7 +107,7 @@ jobs:
         id: generate-versions
         run: |
           # Run the Python script and capture its output
-          VERSION_LIST=$(python tests/backwards_compatibility_tests/scripts/generate_versions.py ${{ steps.get-version.outputs.to_version }} ${{ env.MAX_VERSIONS_TO_TEST }})
+          VERSION_LIST=$(python tests/backwards_compatibility_tests/scripts/generate_versions.py ${{ steps.get-to-version.outputs.to_version }} ${{ env.MAX_VERSIONS_TO_TEST }})
           echo "::set-output name=list::$VERSION_LIST" 
 
       # Step to display the versions to test
