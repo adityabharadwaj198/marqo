@@ -57,6 +57,7 @@ jobs:
     needs: check-if-image-exists
     if: needs.check-if-image-exists.outputs.image_exists == 'false'
     uses: ./.github/workflows/build_push_img.yml
+    secrets: inherit
     with:
       marqo_ref: "${{ github.sha }}"
       push_to: "ECR"
@@ -120,6 +121,7 @@ jobs:
       matrix:
         from_version: ${{ fromJson(needs.orchestrate.outputs.list) }}
     uses: ./.github/workflows/backwards_compatibility_marqo_execution.yml
+    secrets: inherit
     with:
       from_version: ${{ matrix.from_version }}
       to_version: ${{ needs.orchestrate.outputs.to_version }}
