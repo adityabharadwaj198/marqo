@@ -95,7 +95,7 @@ jobs:
 
       # Step to determine the target version
       - name: Determine to_version
-        if: ${{ github.event_name != 'workflow_dispatch' && !github.event.inputs.to_version }} # If this condition is met it signifies
+        if: $${{ github.event_name != 'workflow_dispatch' && !github.event.inputs.to_version }} # If this condition is met it signifies
         # that the run was triggered due to mainline push and was not manual. In that case we need to calculate to_version below. This is skipped otherwise.
         id: get-to-version
         run: |
