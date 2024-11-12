@@ -55,7 +55,8 @@ def pull_remote_image_from_ecr(image_digest: str):
         subprocess.run(["docker", "pull", image_full_name], check=True)
 
         # Optionally retag the image locally to marqo-ai/marqo
-        local_tag = f"marqo-ai/marqo:{image_digest}" #it should now be called marqo-ai/marqo:sha-token
+        hash_part = image_digest.split(":")[1] if ":" in image_digest else image_digest
+        local_tag = f"marqo-ai/marqo:{hash_part}" #it should now be called marqo-ai/marqo:sha-token
         print(f"Retagging image to: {local_tag}")
         subprocess.run(["docker", "tag", image_full_name, local_tag], check=True)
         return local_tag
