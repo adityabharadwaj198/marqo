@@ -12,8 +12,8 @@ on:
             description: 'Target Marqo version'
             required: true
             type: string
-        to_version_tag:
-            description: 'Target Marqo version tag'
+        to_version_digest:
+            description: 'Target Marqo version digest'
             required: true
             type: string
         from_image:
@@ -32,8 +32,8 @@ on:
       to_version:
         description: 'Target Marqo version'
         required: true
-      to_version_tag:
-        description: 'Target Marqo version tag'
+      to_version_digest:
+        description: 'Target Marqo version digest'
         required: true
       from_image:
         description: 'Source Marqo image (optional)'
@@ -127,7 +127,7 @@ jobs:
         env:
           FROM_VERSION: ${{ inputs.from_version || github.event.inputs.from_version }}
           TO_VERSION: ${{ inputs.to_version || github.event.inputs.to_version }}
-          TO_VERSION_TAG: ${{ inputs.to_version_tag || github.event.inputs.to_version_tag }}
+          TO_VERSION_DIGEST: ${{ inputs.to_version_digest || github.event.inputs.to_version_digest }}
           FROM_IMAGE: ${{ inputs.from_image || github.event.inputs.from_image }}
           TO_IMAGE: ${{ inputs.to_image || github.event.inputs.to_image }}
         run: |
@@ -135,7 +135,7 @@ jobs:
             --mode=backwards_compatibility \
             --from_version $FROM_VERSION \
             --to_version $TO_VERSION \
-            --to_version_tag $TO_VERSION_TAG"
+            --to_version_digest $TO_VERSION_DIGEST"
           if [ -n "$FROM_IMAGE" ]; then
             cmd="$cmd --from_image $FROM_IMAGE"
           fi
