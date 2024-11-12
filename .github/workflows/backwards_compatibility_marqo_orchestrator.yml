@@ -96,11 +96,13 @@ jobs:
 
       # Step to determine the target version
       - name: Determine to_version
-        if: ${{ github.event_name != 'workflow_dispatch' && !github.event.inputs.to_version }} # If this condition is met it signifies
-        # that the run was triggered due to mainline push and was not manual. In that case we need to calculate to_version below. This is skipped otherwise.
         id: get-to-version
         run: |
-          VERSION=$(python tests/backwards_compatibility_tests/scripts/determine_to_version.py ${{ github.sha }})
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.to_version }}" ]; then
+            VERSION="${{ github.event.inputs.to_version }}"
+          else
+            VERSION=$(python tests/backwards_compatibility_tests/scripts/determine_to_version.py ${{ github.sha }})
+          fi
           echo "::set-output name=to_version::$VERSION"
 
       # Step to generate the list of versions to test
