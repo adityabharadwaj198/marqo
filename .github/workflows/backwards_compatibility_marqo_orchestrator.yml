@@ -72,6 +72,7 @@ jobs:
     needs: build-and-push-image
     outputs:
       list: ${{ steps.generate-versions.outputs.list }}
+      to_version: ${{ steps.get-to-version.outputs.to_version }}
 
     environment: marqo-test-suite
     steps:
