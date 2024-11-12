@@ -44,10 +44,10 @@ jobs:
         run: |
           echo "Checking for image existence"
           if aws ecr describe-images --repository-name marqo-compatibility-tests --image-ids imageTag=${{ github.sha }}; then
-            echo "::set-output name=image_exists::true"
+            echo "image_exists=true" >> $GITHUB_OUTPUT
             echo "Image already exists in ECR"
           else
-            echo "::set-output name=image_exists::false"
+            echo "image_exists=false" >> $GITHUB_OUTPUT
             echo "Image doesn't exist" 
           fi
 
@@ -64,7 +64,6 @@ jobs:
       image_repo: "marqo-compatibility-tests"
       image_tag: "${{ github.sha }}"
 
-
   orchestrate:
     # Job to orchestrate backwards compatibility test execution. Majorly responsible for determining to_version and for generating the list of for_version to test against.
     name: Orchestrate backwards compatibility test execution
@@ -73,7 +72,6 @@ jobs:
     outputs:
       list: ${{ steps.generate-versions.outputs.list }}
       to_version: ${{ steps.get-to-version.outputs.to_version }}
-      image_digest: ${{ steps.image-digest.outputs.digest }}
 
     environment: marqo-test-suite
     steps:
@@ -95,7 +93,7 @@ jobs:
         run: |
           pip install semver
 
-      # Step to determine the target version
+      # Step to determine the to_version
       - name: Determine to_version
         id: get-to-version
         run: |
@@ -104,17 +102,16 @@ jobs:
           else
             VERSION=$(python tests/backwards_compatibility_tests/scripts/determine_to_version.py ${{ github.sha }})
           fi
-          echo "::set-output name=to_version::$VERSION"
+          echo "to_version=$VERSION" >> $GITHUB_OUTPUT
 
       # Step to generate the list of versions to test
       - name: Generate version list #this code block just generates the from_version list and stores it in a versions variable as a list
         id: generate-versions
         run: |
-          # Run the Python script and capture its output
           VERSION_LIST=$(python tests/backwards_compatibility_tests/scripts/generate_versions.py ${{ steps.get-to-version.outputs.to_version }} ${{ env.MAX_VERSIONS_TO_TEST }})
-          echo "::set-output name=list::$VERSION_LIST" 
+          echo "list=$VERSION_LIST" >> $GITHUB_OUTPUT
 
-      # Step to display the versions to test
+      # Step to display the for_version(s) to test against to_version
       - name: display versions
         run: |
           echo "Versions to test: ${{ steps.generate-versions.outputs.list }} against to_version: ${{ steps.get-to-version.outputs.to_version }}"
@@ -135,9 +132,7 @@ jobs:
             --output text)
 
           echo "Image Digest: $DIGEST"
-
-          # Set the digest as a global environment variable
-          echo "::set-output name=digest::$DIGEST"
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
   run-execution-workflow:
     # Job to trigger execution workflows for each version combination
@@ -151,5 +146,5 @@ jobs:
     with:
       from_version: ${{ matrix.from_version }}
       to_version: ${{ needs.orchestrate.outputs.to_version }}
-      to_version_digest: ${{ needs.orchestrate.outputs.image_digest }} # Pass the image digest to the execution workflow
+      to_version_digest: ${{ env.IMAGE_DIGEST }} # Pass the image digest to the execution workflow
       to_image: ${{ github.event.inputs.to_image || '' }}
