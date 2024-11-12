@@ -122,18 +122,31 @@ jobs:
         id: image-digest
         run: |
           echo "Fetching image digest from ECR"
+          echo "Starting debug for ECR image digest retrieval"
+          echo "Repository Name: $REPO_NAME"
+          echo "Image Tag: ${{ github.sha }}"
 
           REPO_NAME="marqo-compatibility-tests"
           IMAGE_TAG="${{ github.sha }}"
 
+          echo "Listing all images in the repository to check connectivity and permissions"
+          aws ecr describe-images --repository-name "marqo-compatibility-tests" --output json
+
           # Get the image digest
+          echo "Attempting to retrieve image digest for the specific tag: ${{ github.sha }}"
           DIGEST=$(aws ecr describe-images \
             --repository-name "$REPO_NAME" \
             --image-ids imageTag="$IMAGE_TAG" \
             --query 'imageDetails[0].imageDigest' \
-            --output text)
+            --output text) || true
 
-          echo "Image Digest: $DIGEST"
+          echo "DIGEST result: $DIGEST"
+          if [ "$DIGEST" == "None" ] || [ -z "$DIGEST" ]; then
+            echo "Image not found in ECR or command failed."
+            exit 1
+          fi
+          
+          echo "Successfully retrieved image Image Digest: $DIGEST"
 
           # Set the digest as a global environment variable
           echo "::set-output name=digest::$DIGEST"
