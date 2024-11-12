@@ -113,7 +113,7 @@ jobs:
       # Step to display the versions to test
       - name: display versions
         run: |
-          echo "Versions to test: ${{ steps.versions.outputs.list }} against to_version: ${{ steps.get-version.outputs.to_version }}"
+          echo "Versions to test: ${{ steps.generate-versions.outputs.list }} against to_version: ${{ steps.get-to-version.outputs.to_version }}"
 
   # Job to trigger execution workflows for each version combination
   run-execution-workflow:
