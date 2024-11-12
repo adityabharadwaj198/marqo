@@ -38,6 +38,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.ECR_PUSHER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_PUSHER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       # step to check for image existence - it uses aws cli to check if the image exists in the ECR registry "marqo-compatibility-tests"
       - name: check for image existence
         id: check-image
@@ -117,20 +124,27 @@ jobs:
       - name: display versions
         run: |
           echo "Versions to test: ${{ steps.generate-versions.outputs.list }} against to_version: ${{ steps.get-to-version.outputs.to_version }}"
-          
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.ECR_PUSHER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_PUSHER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       - name: Retrieve image digest
         id: image-digest
         run: |
           echo "Fetching image digest from ECR"
           echo "Starting debug for ECR image digest retrieval"
-          echo "Repository Name: $REPO_NAME"
           echo "Image Tag: ${{ github.sha }}"
 
           REPO_NAME="marqo-compatibility-tests"
           IMAGE_TAG="${{ github.sha }}"
+          echo "Repository Name: $REPO_NAME"
 
           echo "Listing all images in the repository to check connectivity and permissions"
-          aws ecr describe-images --repository-name "marqo-compatibility-tests" --output json
+          aws ecr describe-images --repository-name marqo-compatibility-tests --output json
 
           # Get the image digest
           echo "Attempting to retrieve image digest for the specific tag: ${{ github.sha }}"
