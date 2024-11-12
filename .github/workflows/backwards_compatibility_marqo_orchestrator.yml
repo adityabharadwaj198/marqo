@@ -73,6 +73,7 @@ jobs:
     outputs:
       list: ${{ steps.generate-versions.outputs.list }}
       to_version: ${{ steps.get-to-version.outputs.to_version }}
+      image_digest: ${{ steps.image-digest.outputs.digest }}
 
     environment: marqo-test-suite
     steps:
@@ -136,8 +137,7 @@ jobs:
           echo "Image Digest: $DIGEST"
 
           # Set the digest as a global environment variable
-          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_ENV
-
+          echo "::set-output name=digest::$DIGEST"
 
   run-execution-workflow:
     # Job to trigger execution workflows for each version combination
@@ -151,5 +151,5 @@ jobs:
     with:
       from_version: ${{ matrix.from_version }}
       to_version: ${{ needs.orchestrate.outputs.to_version }}
-      to_version_digest: ${{ env.IMAGE_DIGEST }} # Pass the image digest to the execution workflow
+      to_version_digest: ${{ needs.orchestrate.outputs.image_digest }} # Pass the image digest to the execution workflow
       to_image: ${{ github.event.inputs.to_image || '' }}
