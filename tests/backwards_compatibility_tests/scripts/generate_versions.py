@@ -4,7 +4,7 @@ import semver
 import subprocess
 import sys
 
-def generate_versions(to_version: str, num_versions: int = 4) -> list:
+def generate_versions(to_version: str, num_versions: int = 3) -> list:
     """
     Generate a list of previous versions based on the target version.
 
@@ -26,12 +26,15 @@ def generate_versions(to_version: str, num_versions: int = 4) -> list:
     if target_version.patch > 0:
         prev_patch_version = f"{target_version.major}.{target_version.minor}.{target_version.patch - 1}"
         versions.append(prev_patch_version)
-        num_versions-=1
+        print(versions)
+        print(num_versions)
 
     # Gather the latest patch version for each preceding minor version
     minor = target_version.minor - 1
     while len(versions) < num_versions and minor >= 0:
         # Get all tags for the given minor version, sort, and pick the latest patch
+        print(f" version: {versions}")
+        print(f" num_versions: {num_versions}")
         tags = subprocess.check_output(
             ["git", "tag", "--list", f"{target_version.major}.{minor}.*"],
             text=True
@@ -42,6 +45,8 @@ def generate_versions(to_version: str, num_versions: int = 4) -> list:
             latest_patch = max(tags, key=semver.VersionInfo.parse)
             versions.append(latest_patch.lstrip("v"))
         minor -= 1
+        print(f"later version: {versions}")
+        print(f"later num_versions: {num_versions}")
 
     return versions
 
@@ -49,4 +54,4 @@ if __name__ == "__main__":
     to_version = sys.argv[1]  # Get to version from the command line
     num_versions = sys.argv[2] # Get number of versions to generate
     versions = generate_versions(to_version, int(num_versions))
-    print(json.dumps(versions))  # Output versions as a comma-separated string
+    print(json.dumps(versions))  # Output versions as Json
