@@ -388,7 +388,7 @@ def backwards_compatibility_test(from_version: str, to_version: str, to_version_
         print("Started marqo container" + from_version)
 
         try:
-            run_tests("prepare", from_version, to_version, "http://localhost:8882")
+            run_tests_across_versions("prepare", from_version, to_version)
         except Exception as e:
             print(f"Error running tests in prepare mode: {e}")
             raise
@@ -399,7 +399,7 @@ def backwards_compatibility_test(from_version: str, to_version: str, to_version_
         start_marqo_to_version_container(to_version, from_version, from_version_volume, to_version_digest)
         print(f"Started marqo container in to_version {to_version} by transferring state")
         # Step 4: Run tests
-        run_tests("test", from_version, to_version, "http://localhost:8882")
+        run_tests_across_versions("test", from_version, to_version)
         print("Ran tests in test mode")
     except Exception as e:
         print(f"Error: {e}, {e.__class__.__name__}, {e.__traceback__}, {e.__traceback__.__class__}, {e.__traceback__.tb_lineno}")
@@ -436,14 +436,18 @@ def rollback_test(to_version: str, from_version: str, to_version_digest, from_im
 
         start_marqo_from_version_container(from_version, None, from_image)
 
-        run_tests("test", from_version, to_version, "http://localhost:8882")
+        run_tests_across_versions("test", from_version, to_version)
     finally:
         # Stop the final container (but don't remove it yet)
         stop_marqo_container(from_version)
         # Clean up all containers at the end
         cleanup_containers()
 
-def run_tests(mode: str, from_version: str, to_version: str, marqo_api: str):
+def run_tests_across_versions(mode: str, from_version: str, to_version: str):
+    """
+    This method will run tests across two Marqo versions, meaning it will run prepare on a Marqo from_version instance,
+    and run tests on a Marqo to_version instance.
+    """
     print(f"Inside run_tests with arguments mode: {mode}, from_version: {from_version}, to_version: {to_version}")
 
     if mode == "prepare":
@@ -459,12 +463,32 @@ def run_tests(mode: str, from_version: str, to_version: str, marqo_api: str):
 
     elif mode == "test":
         pytest_args = [
-            f"--from_version={from_version}",
-            f"--to_version={to_version}",
+            f"--version={from_version}",
+            # f"--to_version={to_version}",
             "-m", f"marqo_version",
             "tests/backwards_compatibility_tests"
         ]
         pytest.main(pytest_args)
+
+def full_test_run(to_version: str):
+    """
+    This method will run tests on a single marqo version container, which means it will run both prepare and tests on the
+    to_version Marqo container. The to_version Marqo container however has been created by transferring instance from a
+    previous from_version Marqo container.
+    """
+    tests = [test_class for test_class in BaseCompatibilityTestCase.__subclasses__()
+             if getattr(test_class, 'marqo_from_version', '0') <= to_version]
+    for test_class in tests:
+        test_class.setUpClass()
+        test_instance = test_class()
+        test_instance.prepare()
+        test_class.tearDownClass()
+    pytest_args = [
+        f"--version={to_version}",
+        "-m", f"marqo_version",
+        "tests/backwards_compatibility_tests"
+    ]
+    pytest.main(pytest_args)
 
 def create_volume_for_marqo_version(version: str, volume_name: str):
     """
