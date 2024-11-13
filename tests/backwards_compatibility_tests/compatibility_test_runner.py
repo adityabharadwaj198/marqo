@@ -489,7 +489,6 @@ def run_prepare_mode(version_to_test_against: str):
     tests = [test_class for test_class in BaseCompatibilityTestCase.__subclasses__()
              if getattr(test_class, 'marqo_version', '0') <= version_to_test_against]
     for test_class in tests:
-        logger.debug(f"Loading test_class {test_class.__name__}")
         test_class.setUpClass()
         test_instance = test_class()
         test_instance.prepare() #Run prepare method of the test class
