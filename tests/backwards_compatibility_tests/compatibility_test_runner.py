@@ -401,6 +401,8 @@ def backwards_compatibility_test(from_version: str, to_version: str, to_version_
         # Step 4: Run tests
         run_tests_across_versions("test", from_version, to_version)
         print("Ran tests in test mode")
+        # Step 5: Run a full test run
+        full_test_run(to_version)
     except Exception as e:
         print(f"Error: {e}, {e.__class__.__name__}, {e.__traceback__}, {e.__traceback__.__class__}, {e.__traceback__.tb_lineno}")
         raise e
