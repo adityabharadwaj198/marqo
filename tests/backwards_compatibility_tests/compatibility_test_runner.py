@@ -104,7 +104,7 @@ def pull_marqo_image(image_identifier: str, source: str):
     """
     try:
         if source == "docker":
-            logger.debug(f"pulling this image from dockerhub {image_identifier}")
+            logger.debug(f"pulling this image: {image_identifier} from Dockerhub")
             subprocess.run(["docker", "pull", image_identifier], check=True)
             return image_identifier
         elif source == "ECR":
@@ -178,7 +178,6 @@ def start_marqo_from_version_container(version: str, from_version_volume, from_v
         # Run the docker command
         subprocess.run(cmd, check=True)
         containers_to_cleanup.add(container_name)
-        logger.debug(f"Going to start {container_name}.")
 
         # Follow docker logs
         log_cmd = ["docker", "logs", "-f", container_name]
@@ -280,7 +279,6 @@ def start_marqo_to_version_container(to_version: str, from_version: str, from_ve
         # Run the docker command
         subprocess.run(cmd, check=True)
         containers_to_cleanup.add(container_name)
-        logger.debug(f"Going to start {container_name}.")
 
         # Follow docker logs
         log_cmd = ["docker", "logs", "-f", container_name]
@@ -417,7 +415,7 @@ def backwards_compatibility_test(from_version: str, to_version: str, to_version_
         # Step 4: Run tests
         run_tests_across_versions("test", from_version, to_version)
         logger.debug("Ran tests in test mode")
-        # Step 5: Run a full test run
+        # Step 5: Do a full test run which includes running tests in prepare and test mode on the same container
         full_test_run(to_version)
     except Exception as e:
         logger.debug(f"Error: {e}, {e.__class__.__name__}, {e.__traceback__}, {e.__traceback__.__class__}, {e.__traceback__.tb_lineno}")
@@ -466,7 +464,7 @@ def run_tests_across_versions(mode: str, from_version: str, to_version: str):
     This method will run tests across two Marqo versions, meaning it will run prepare on a Marqo from_version instance,
     and run tests on a Marqo to_version instance.
     """
-    logger.debug(f"Inside run_tests with arguments mode: {mode}, from_version: {from_version}, to_version: {to_version}")
+    print(f"Running tests across versions with mode: {mode}, from_version: {from_version}, to_version: {to_version}")
 
     if mode == "prepare":
         run_prepare_mode(from_version)
@@ -476,7 +474,7 @@ def run_tests_across_versions(mode: str, from_version: str, to_version: str):
 def full_test_run(to_version: str):
     """
     This method will run tests on a single marqo version container, which means it will run both prepare and tests on the
-    to_version Marqo container. An important detail is that to_version Marqo container has been created by transferring instance from a
+    to_version Marqo container. Note that to_version Marqo container has been created by transferring instance from a
     previous from_version Marqo container.
     """
     logger.debug(f"Inside full_test_run with to_version: {to_version}")
@@ -490,8 +488,6 @@ def run_prepare_mode(version_to_test_against: str):
     # Get all subclasses of `BaseCompatibilityTestCase` that match the `version_to_test_against` criterion
     tests = [test_class for test_class in BaseCompatibilityTestCase.__subclasses__()
              if getattr(test_class, 'marqo_version', '0') <= version_to_test_against]
-    for test_class in tests:
-        logger.debug(f"Printing all the classes we collected {test_class.__name__}")
     for test_class in tests:
         logger.debug(f"Loading test_class {test_class.__name__}")
         test_class.setUpClass()
