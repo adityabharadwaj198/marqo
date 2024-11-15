@@ -1,6 +1,6 @@
 import pytest
 
-from base_test_case import BaseCompatibilityTestCase
+from base_compatibility_test_case import BaseCompatibilityTestCase
 from marqo_test import MarqoTestCase
 import marqo
 

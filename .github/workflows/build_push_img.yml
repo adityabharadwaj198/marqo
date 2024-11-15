@@ -56,6 +56,11 @@ on:
         description: 'DockerHub password'
         required: false
 
+  outputs:
+    image_digest:
+      description: "The digest of the image that this workflow just built"
+      value: ${{ jobs.Docker-Build.outputs.image_digest }}
+
 jobs:
   Start-Runner:
     # on US-WEST-2, open source account
@@ -96,7 +101,8 @@ jobs:
     name: Build docker image
     needs: Start-Runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runner
-
+    outputs:
+      image_digest: ${{ steps.build-and-push.outputs.digest }}
     environment: marqo-build-environment
 
     steps:
@@ -153,6 +159,7 @@ jobs:
           fi
 
       - name: Build and push
+        id: build-and-push
         uses: docker/build-push-action@v4
         with:
           context: .
