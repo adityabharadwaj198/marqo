@@ -110,14 +110,14 @@ jobs:
           else
             VERSION=$(python tests/backwards_compatibility_tests/scripts/determine_to_version.py ${{ github.sha }})
           fi
-          echo "to_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "to_version=${VERSION}" >> $GITHUB_OUTPUT
       # Step to generate the list of versions to test
       - name: Generate version list #this code block just generates the from_version list and stores it in a versions variable as a list
         id: generate-versions
         run: |
           # Run the Python script and capture its output
           VERSION_LIST=$(python tests/backwards_compatibility_tests/scripts/generate_versions.py ${{ steps.get-to-version.outputs.to_version }} ${{ env.MAX_VERSIONS_TO_TEST }})
-          echo "list=$VERSION_LIST" >> $GITHUB_OUTPUT
+          echo "list=${VERSION_LIST}" >> $GITHUB_OUTPUT
       # Step to display the versions to test
       - name: display versions
         run: |
