@@ -64,7 +64,6 @@ jobs:
     needs: check-if-image-exists
     if: needs.check-if-image-exists.outputs.image_exists == 'false'
     uses: ./.github/workflows/build_push_img.yml
-    id: build-and-push-image-workflow
     secrets: inherit
     with:
       marqo_ref: "${{ github.sha }}"
