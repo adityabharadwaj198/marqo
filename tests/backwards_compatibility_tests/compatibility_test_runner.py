@@ -16,7 +16,6 @@ from compatibility_test_logger import get_logger
 
 marqo_transfer_state_version = semver.VersionInfo.parse("2.9.0")
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from base_compatibility_test_case import BaseCompatibilityTestCase
 
 # Keep track of containers that need cleanup

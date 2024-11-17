@@ -82,7 +82,7 @@ jobs:
     outputs:
       list: ${{ steps.generate-versions.outputs.list }}
       to_version: ${{ steps.get-to-version.outputs.to_version }}
-      image_digest: ${{ needs.build-and-push-image.outputs.image_digest }}
+#      image_digest: ${{ needs.build-and-push-image.outputs.image_digest }}
     environment: marqo-test-suite
     steps:
       # Step to check out the Marqo repository
@@ -131,37 +131,10 @@ jobs:
           aws-access-key-id: ${{ secrets.ECR_PUSHER_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ECR_PUSHER_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
-      - name: Retrieve image digest
-        id: image-digest
-        run: |
-          echo "Fetching image digest from ECR"
-
-          REPO_NAME="marqo-compatibility-tests"
-          IMAGE_TAG="${{ github.sha }}"
-
-          # Get the image digest
-          echo "Attempting to retrieve image digest for the specific tag: ${{ github.sha }}"
-          DIGEST=$(aws ecr describe-images \
-            --repository-name "$REPO_NAME" \
-            --image-ids imageTag="$IMAGE_TAG" \
-            --query 'imageDetails[0].imageDigest' \
-            --output text) || true
-
-          echo "DIGEST result: $DIGEST"
-          if [ "$DIGEST" == "None" ] || [ -z "$DIGEST" ]; then
-            echo "Image not found in ECR or command failed."
-            exit 1
-          fi
-          
-          echo "Successfully retrieved image Image Digest: $DIGEST"
-
-          # Set the digest as a global environment variable
-          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
   run-execution-workflow:
     # Job to trigger execution workflows for each version combination
     name: Run all execution workflows
-    needs: orchestrate
+    needs: orchestrate, build-and-push-image
     strategy:
       matrix:
         from_version: ${{ fromJson(needs.orchestrate.outputs.list) }}
@@ -170,5 +143,5 @@ jobs:
     with:
       from_version: ${{ matrix.from_version }}
       to_version: ${{ needs.orchestrate.outputs.to_version }}
-      to_version_digest: ${{ needs.orchestrate.outputs.image_digest }} # Pass the image digest to the execution workflow
+      to_version_digest: ${{ needs.build-and-push-image.outputs.image_digest }} # Pass the image digest to the execution workflow
       to_image: ${{ github.event.inputs.to_image || '' }}
