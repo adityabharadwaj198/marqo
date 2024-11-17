@@ -485,6 +485,8 @@ def run_prepare_mode(version_to_test_against: str):
     # Get all subclasses of `BaseCompatibilityTestCase` that match the `version_to_test_against` criterion
     tests = [test_class for test_class in BaseCompatibilityTestCase.__subclasses__()
              if getattr(test_class, 'marqo_version', '0') <= version_to_test_against]
+    for test_class in BaseCompatibilityTestCase.__subclasses__():
+        logger.debug(f"See the test_class: {test_class}")
     for test_class in tests:
         test_class.setUpClass()
         test_instance = test_class()

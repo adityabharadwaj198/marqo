@@ -80,6 +80,8 @@ jobs:
   backwards_compatibility:
     # This job runs on the newly created runner
     runs-on: ${{ needs.start-runner.outputs.label }}
+    env: # Set environment variables for the job
+      PYTHONPATH: ${{ github.workspace }}:${{ env.PYTHONPATH }}
     needs: Start-Runner
     steps:
       # Step to check out the Marqo repository
