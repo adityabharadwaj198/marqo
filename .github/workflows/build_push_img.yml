@@ -42,10 +42,10 @@ on:
         description: 'Image tag'
         required: true
 
-  outputs:
-    image_digest:
-      description: "The digest of the image that this workflow just built"
-      value: ${{ jobs.Docker-Build.outputs.image_digest }}
+outputs:
+  image_digest:
+    description: "The digest of the image that this workflow just built"
+    value: ${{ jobs.Docker-Build.outputs.image_digest }}
 
 jobs:
   Start-Runner:
