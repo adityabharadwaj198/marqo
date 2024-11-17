@@ -22,6 +22,10 @@ on:
         description: 'Image tag'
         required: true
         type: string
+    outputs:
+      image_digest:
+        description: "The digest of the image that this workflow just built"
+        value: ${{ jobs.Docker-Build.outputs.image_digest }}
   workflow_dispatch: #for manual triggers
     inputs:
       marqo_ref:
@@ -41,11 +45,6 @@ on:
       image_tag:
         description: 'Image tag'
         required: true
-
-outputs:
-  image_digest:
-    description: "The digest of the image that this workflow just built"
-    value: ${{ jobs.Docker-Build.outputs.image_digest }}
 
 jobs:
   Start-Runner:
