@@ -80,8 +80,6 @@ jobs:
   backwards_compatibility:
     # This job runs on the newly created runner
     runs-on: ${{ needs.start-runner.outputs.label }}
-    env: # Set environment variables for the job
-      PYTHONPATH: ${{ github.workspace }}:${{ env.PYTHONPATH }}
     needs: Start-Runner
     steps:
       # Step to check out the Marqo repository
@@ -124,6 +122,7 @@ jobs:
           FROM_IMAGE: ${{ inputs.from_image || github.event.inputs.from_image }}
           TO_IMAGE: ${{ inputs.to_image || github.event.inputs.to_image }}
         run: |
+              export PYTHONPATH=${{ github.workspace }}:$PYTHONPATH
               python tests/backwards_compatibility_tests/compatibility_test_runner.py \
               --mode=backwards_compatibility \
               --from_version "$FROM_VERSION" \
