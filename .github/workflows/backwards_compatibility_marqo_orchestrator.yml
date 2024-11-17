@@ -115,9 +115,20 @@ jobs:
       - name: Generate version list #this code block just generates the from_version list and stores it in a versions variable as a list
         id: generate-versions
         run: |
+          echo "Direct script output:"
+          python tests/backwards_compatibility_tests/scripts/generate_versions.py 2.12.5 3
+          
+          echo "Captured output:"
           # Run the Python script and capture its output
           VERSION_LIST=$(python tests/backwards_compatibility_tests/scripts/generate_versions.py ${{ steps.get-to-version.outputs.to_version }} ${{ env.MAX_VERSIONS_TO_TEST }})
-          echo "list=${VERSION_LIST}" >> $GITHUB_OUTPUT
+          echo "VERSION_LIST content: ${VERSION_LIST}"
+
+          echo "list=\"${VERSION_LIST}\"" >> $GITHUB_OUTPUT
+
+          # Test with a hardcoded value first
+          echo "list_2=[\"2.12.4\",\"2.12.3\",\"2.12.2\"]" >> $GITHUB_OUTPUT
+
+
       # Step to display the versions to test
       - name: display versions
         run: |
